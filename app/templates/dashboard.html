@@ -19,6 +19,21 @@
     </div>
 </div>
 
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form method="GET" action="{{ url_for('main.dashboard') }}" class="d-flex gap-2">
+            <input type="text" name="q" class="form-control" placeholder="Search your files..." value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            {% if request.args.get('q') %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-danger" title="Clear Search">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
 <div class="row">
     <div class="col-md-12">
         <h3>Your Documents</h3>
@@ -55,7 +70,7 @@
         </div>
         {% else %}
             <div class="alert alert-info">
-                <i class="fa-solid fa-circle-info me-2"></i> No documents found. Upload your first file above!
+                <i class="fa-solid fa-circle-info me-2"></i> No documents found matching your criteria.
             </div>
         {% endif %}
     </div>

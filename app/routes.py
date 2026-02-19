@@ -5,15 +5,12 @@ from app.models import User, Document
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.utils import secure_filename
 
-# Define the Blueprint
 main = Blueprint('main', __name__)
 
 # --- CONFIGURATION ---
-# 1. Define allowed file extensions (Security Feature)
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx'}
 
 def allowed_file(filename):
-    """Check if the file has an extension and if it's in our allowed list."""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -78,32 +75,50 @@ def logout():
     return redirect(url_for('main.login'))
 
 # --------------------------
-# Dashboard & File Routes
+# Dashboard, Admin & File Routes
 # --------------------------
 
 @main.route("/dashboard")
 @login_required
 def dashboard():
-    documents = Document.query.filter_by(user_id=current_user.id).all()
+    # Search Logic
+    q = request.args.get('q')
+    if q:
+        documents = Document.query.filter(
+            Document.user_id == current_user.id, 
+            Document.filename.contains(q)
+        ).all()
+    else:
+        documents = Document.query.filter_by(user_id=current_user.id).all()
+        
     return render_template('dashboard.html', documents=documents)
+
+@main.route("/admin")
+@login_required
+def admin():
+    # Security Check: Only allow 'admin' role
+    if current_user.role != 'admin':
+        flash('Access denied. Administrators only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    # Load ALL data for the admin view
+    users = User.query.all()
+    all_docs = Document.query.all()
+    return render_template('admin.html', users=users, documents=all_docs)
 
 @main.route("/upload", methods=['POST'])
 @login_required
 def upload_file():
-    # Check if the post request has the file part
     if 'file' not in request.files:
         flash('No file part', 'danger')
         return redirect(url_for('main.dashboard'))
         
     file = request.files['file']
     
-    # Check if user selected a file
     if file.filename == '':
         flash('No selected file', 'danger')
         return redirect(url_for('main.dashboard'))
 
-    # 2. VALIDATION CHECK
-    # Check if the file exists AND if the extension is allowed
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
@@ -116,7 +131,6 @@ def upload_file():
         flash('File uploaded successfully!', 'success')
         return redirect(url_for('main.dashboard'))
     else:
-        # 3. ERROR HANDLING
         flash('Invalid file type! Allowed types: PDF, PNG, JPG, DOCX, TXT', 'danger')
         return redirect(url_for('main.dashboard'))
 
@@ -125,7 +139,8 @@ def upload_file():
 def download_file(file_id):
     doc = Document.query.get_or_404(file_id)
     
-    if doc.author != current_user:
+    # Allow download if user is owner OR user is admin
+    if doc.author != current_user and current_user.role != 'admin':
         flash('You do not have permission to view this file.', 'danger')
         return redirect(url_for('main.dashboard'))
         
@@ -136,7 +151,7 @@ def download_file(file_id):
 def delete_file(file_id):
     doc = Document.query.get_or_404(file_id)
     
-    if doc.author != current_user:
+    if doc.author != current_user and current_user.role != 'admin':
         flash('Permission denied.', 'danger')
         return redirect(url_for('main.dashboard'))
     

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-danger"><i class="fa-solid fa-user-shield me-2"></i>Admin Panel</h2>
+        <p class="text-muted">Global overview of all users and files.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-danger mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="fa-solid fa-users me-2"></i>Registered Users
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for user in users %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ user.username }}</strong><br>
+                        <small class="text-muted">{{ user.email }}</small>
+                    </div>
+                    <span class="badge bg-secondary">{{ user.role }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="fa-solid fa-database me-2"></i>All Uploaded Documents
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Owner</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                        <tr>
+                            <td><i class="fa-solid {{ doc.icon_class }} me-2"></i>{{ doc.filename }}</td>
+                            <td>{{ doc.author.username }}</td>
+                            <td>{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <a href="{{ url_for('main.download_file', file_id=doc.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
